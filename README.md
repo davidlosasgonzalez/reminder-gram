@@ -10,6 +10,14 @@
 - Entiende fechas relativas (“hoy”, “mañana”, “el lunes”) y horarios flexibles.
 - Ignora automáticamente peticiones fuera del dominio calendario.
 
+## ⏰ Envío automático diario de agenda
+
+El bot utiliza `node-cron` para que cada día, a la hora configurada en la variable de entorno `CRON_TIME`, te envíe automáticamente tu listado de eventos de Google Calendar por Telegram.
+
+Si quieres cambiar la hora del envío diario, ajusta el valor de `CRON_TIME` en tu `.env`.
+
+Esta funcionalidad funciona incluso si no envías ningún mensaje.
+
 ## ⚙️ Guía paso a paso para empezar
 
 ### 1. Clona e instala dependencias
@@ -121,3 +129,5 @@ npm run test
 ## 📄 Licencia
 
 Este proyecto está bajo licencia MIT.
+
+Consulta el archivo [LICENSE](./LICENSE.md) incluido en el repositorio para los términos y condiciones completos.

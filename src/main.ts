@@ -1,5 +1,4 @@
 import { NestFactory } from '@nestjs/core';
-import * as morgan from 'morgan';
 import { AppModule } from './app.module';
 import { env } from './config/env/env.config';
 import { GlobalExceptionFilter } from './shared/filters/global-exception.filter';
@@ -14,8 +13,6 @@ async function bootstrap() {
 
         app.useGlobalPipes(new GlobalValidationPipe());
         app.useGlobalFilters(new GlobalExceptionFilter());
-
-        app.use(morgan('dev'));
 
         const port = env.PORT ?? 3000;
         await app.listen(port);
