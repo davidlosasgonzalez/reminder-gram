@@ -1,80 +1,98 @@
-/**
- * @file event.repository
- * @description Event repository implementation for EventPort contract (uses CalendarService).
- */
+import { Injectable, Inject } from '@nestjs/common';
+import { Event } from '../../../domain/entities/event.entity';
+import { IEventRepository } from '../../../domain/interfaces/repositories/event.repository.interface';
+import { ICalendarService } from '../../../domain/interfaces/services/calendar.service.interface';
+import { CALENDAR_SERVICE } from '../../external/calendar/calendar.module';
 
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { Event } from '@/domain/entities/event.entity';
-import { CreateEventDto } from '@/application/dtos/events/create-event.dto';
-import { EventPort } from '@/application/ports/event.port';
-import { CalendarService } from '@/domain/services/calendar.service.interface';
-import { CALENDAR_SERVICE } from '@/infrastructure/external-services/calendar/calendar.tokens';
-import { EventPayloadMapper } from '@/application/adapters/event-payload-mapper';
-
-// #region EventRepositoryImpl
 /**
- * EventRepositoryImpl for EventPort contract using CalendarService as backend.
+ * Concrete implementation of the EventRepository interface
+ *
+ * Handles event persistence operations using Google Calendar.
  */
 @Injectable()
-export class EventRepositoryImpl implements EventPort {
-    private readonly logger = new Logger(EventRepositoryImpl.name);
-
+export class EventRepositoryImpl implements IEventRepository {
     constructor(
         @Inject(CALENDAR_SERVICE)
-        private readonly calendarService: CalendarService,
+        private readonly calendarService: ICalendarService,
     ) {}
 
-    // #region createEvent
-
-    /**
-     * Creates a new event using the calendar service.
-     */
-    async createEvent(dto: CreateEventDto, calendarId: string): Promise<Event> {
-        this.logger.log('Creating event via CalendarService');
-        const event = EventPayloadMapper.toEntity(dto);
+    async save(event: Event): Promise<Event> {
         return this.calendarService.createEvent(event);
     }
 
-    // #endregion
-
-    // #region findById
-
-    /**
-     * Finds a single event by its ID.
-     */
-    async findById(id: string): Promise<Event | null> {
-        this.logger.log(`Finding event by id: ${id}`);
-        // TODO: Implement real lookup using CalendarService if possible
-        return null;
-    }
-
-    // #endregion
-
-    // #region findEvents
-
-    /**
-     * Finds events within a date range.
-     */
     async findEvents(start: Date, end: Date): Promise<Event[]> {
-        this.logger.log(
-            `Finding events from ${start.toISOString()} to ${end.toISOString()}`,
+        return this.calendarService.findEvents(
+            normalizeDate(start),
+            normalizeDate(end),
         );
-        return this.calendarService.findEvents(start, end);
     }
 
-    // #endregion
-
-    // #region deleteEvent
-
     /**
-     * Deletes an event.
+     * Finds events that overlap with the given event (time interval overlap, same calendar).
+     * @param event The event to check for overlaps
+     * @returns Array of overlapping events
      */
-    async deleteEvent(id: string): Promise<void> {
-        this.logger.log(`Deleting event ${id}`);
+    async findOverlappingEvents(event: Event): Promise<Event[]> {
+        const start = normalizeDate(event.start);
+        const end = normalizeDate(event.end);
+
+        const events = await this.calendarService.findEvents(start, end);
+        return events.filter(
+            (e) =>
+                e.id !== event.id &&
+                e.calendarId === event.calendarId &&
+                areIntervalsOverlapping(
+                    start,
+                    end,
+                    normalizeDate(e.start),
+                    normalizeDate(e.end),
+                ),
+        );
+    }
+
+    async update(event: Event): Promise<Event> {
+        return this.calendarService.updateEvent(event);
+    }
+
+    async delete(id: string): Promise<void> {
         await this.calendarService.deleteEvent(id);
     }
 
-    // #endregion
+    async findByCalendarId(calendarId: string): Promise<Event[]> {
+        // TODO: Implement actual persistence
+        return [];
+    }
+
+    async findByTitle(title: string): Promise<Event[]> {
+        // TODO: Implement actual persistence
+        return [];
+    }
 }
 
-// #endregion
+/**
+ * Converts value to Date, supporting Date, string, and DateVO (with .value).
+ */
+function normalizeDate(d: any): Date {
+    if (!d) throw new Error('Date value is missing');
+    if (d instanceof Date) return d;
+    if (typeof d === 'string') return new Date(d);
+    if ('value' in d && d.value instanceof Date) return d.value;
+    return new Date(d);
+}
+
+/**
+ * Checks if two time intervals overlap.
+ * @param start1 Start of first interval
+ * @param end1 End of first interval
+ * @param start2 Start of second interval
+ * @param end2 End of second interval
+ * @returns True if intervals overlap
+ */
+function areIntervalsOverlapping(
+    start1: Date,
+    end1: Date,
+    start2: Date,
+    end2: Date,
+): boolean {
+    return start1 < end2 && end1 > start2;
+}

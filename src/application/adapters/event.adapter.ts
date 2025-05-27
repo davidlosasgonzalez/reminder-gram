@@ -1,84 +1,77 @@
-/**
- * @file event.adapter
- * @description Adapter to transform between domain Event and DTOs, and delegate use-cases via application ports.
- */
-
-import { Injectable, Inject } from '@nestjs/common';
-import { Event } from '@/domain/entities/event.entity';
-import { EventResponseDto } from '@/application/dtos/events/event-response.dto';
+import { Inject, Injectable, ConflictException } from '@nestjs/common';
+import { IEventPort } from '@/application/ports/event.port';
 import { CreateEventDto } from '@/application/dtos/events/create-event.dto';
-import { EventPort } from '@/application/ports/event.port';
-import { EVENT_PORT } from '@/infrastructure/persistence/repositories/repository.tokens';
+import { Event } from '@/domain/entities/event.entity';
+import { CreateEventUseCase } from '@/application/use-cases/events/create-event.use-case';
+import { UpdateEventUseCase } from '@/application/use-cases/events/update-event.use-case';
+import { IEventRepository } from '@/domain/interfaces/repositories/event.repository.interface';
+import { EVENT_REPOSITORY } from '@/infrastructure/persistence/repositories/repository.tokens';
 
+/**
+ * Adapter for event operations
+ *
+ * This adapter implements the event port and coordinates:
+ * - Event creation
+ * - Event updates
+ * - Event queries
+ * - Event deletion
+ */
 @Injectable()
-export class EventAdapter {
-    /**
-     * Constructor with injected event port for application layer operations.
-     * @param eventPort Application event port interface.
-     */
+export class EventAdapter implements IEventPort {
     constructor(
-        @Inject(EVENT_PORT)
-        private readonly eventPort: EventPort,
+        private readonly createEventUseCase: CreateEventUseCase,
+        private readonly updateEventUseCase: UpdateEventUseCase,
+        @Inject(EVENT_REPOSITORY)
+        private readonly eventRepository: IEventRepository,
     ) {}
 
-    // #region toResponseDto
-
     /**
-     * Transforms a domain Event entity to EventResponseDto.
-     * @param event The domain event entity.
-     * @returns EventResponseDto
-     */
-    static toResponseDto(event: Event): EventResponseDto {
-        return {
-            id: event.getId(),
-            title: event.getTitle(),
-            description: event.getDescription(),
-            start: event.getStart(),
-            end: event.getEnd(),
-            location: event.getLocation(),
-            calendarId: event.getCalendarId(),
-        };
-    }
-
-    // #endregion
-
-    // #region createEvent
-
-    /**
-     * Creates a new event via the application port.
-     * @param dto Event creation DTO.
-     * @param calendarId Calendar ID for the event.
-     * @returns The created event.
+     * Creates a new event
+     * @param dto The event creation data
+     * @param calendarId The ID of the calendar
+     * @returns The created event or throws ConflictException with details if overlapping
      */
     async createEvent(dto: CreateEventDto, calendarId: string): Promise<Event> {
-        return this.eventPort.createEvent(dto, calendarId);
+        try {
+            return await this.createEventUseCase.execute(dto, calendarId);
+        } catch (error) {
+            // Manejo explícito de solapamiento de eventos
+            if (error instanceof ConflictException) {
+                const response = (error as any).response;
+                throw new ConflictException({
+                    message: response?.message ?? 'Evento solapado',
+                    details: response?.details ?? {},
+                });
+            }
+            throw error;
+        }
     }
 
-    // #endregion
-
-    // #region findEvents
-
     /**
-     * Finds upcoming events via the application port.
-     * @param start Start date.
-     * @param end End date.
-     * @returns Array of events.
+     * Finds events within a date range
+     * @param start Start date
+     * @param end End date
+     * @returns Array of events
      */
     async findEvents(start: Date, end: Date): Promise<Event[]> {
-        return this.eventPort.findEvents(start, end);
+        return this.eventRepository.findEvents(start, end);
     }
-
-    // #endregion
-
-    // #region deleteEvent
 
     /**
-     * Deletes an event by ID via the application port.
-     * @param eventId The ID of the event to delete.
+     * Updates an existing event
+     * @param id The ID of the event to update
+     * @param dto The updated event data
+     * @returns The updated event
      */
-    async deleteEvent(eventId: string): Promise<void> {
-        return this.eventPort.deleteEvent(eventId);
+    async updateEvent(id: string, dto: CreateEventDto): Promise<Event> {
+        return this.updateEventUseCase.execute(id, dto);
     }
 
-    // #endregion
+    /**
+     * Deletes an event
+     * @param id The ID of the event to delete
+     */
+    async deleteEvent(id: string): Promise<void> {
+        await this.eventRepository.delete(id);
+    }
 }

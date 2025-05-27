@@ -1,26 +1,24 @@
 {
-    "compilerOptions": {
-        "module": "commonjs", // Necesario para Jest
-        "declaration": false, // No generes archivos de declaración
-        "removeComments": true, // Elimina comentarios para producción
-        "emitDecoratorMetadata": true, // Necesario para decoradores en NestJS
-        "experimentalDecorators": true, // Necesario para decoradores en NestJS
-        "allowSyntheticDefaultImports": true, // Para poder importar módulos de forma más sencilla
-        "target": "ES2020", // Asegúrate de que el código sea compatible con ES2020
-        "sourceMap": true, // Genera mapas de origen para depuración
-        "outDir": "./dist",
-        "baseUrl": ".",
-        "paths": {
-            "@/*": ["src/*"]
-        },
-        "incremental": true, // Mejora el rendimiento de la compilación
-        "skipLibCheck": true, // Saltar la comprobación de tipos en bibliotecas
-        "strictNullChecks": true, // Asegura una verificación estricta de nulos
-        "forceConsistentCasingInFileNames": true, // Asegura que los nombres de archivos sean consistentes
-        "noImplicitAny": true, // Habilitar para evitar el tipo `any` implícito
-        "strictBindCallApply": true, // Habilita la comprobación estricta para `bind`, `call`, `apply`
-        "noFallthroughCasesInSwitch": true // Evita errores de fallthrough en las declaraciones `switch`
+  "compilerOptions": {
+    "module": "commonjs",
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"]
     },
-    "include": ["src/**/*.ts", "tests/**/*.ts"],
-    "exclude": ["node_modules"]
+    "incremental": true,
+    "skipLibCheck": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": false,
+    "strictBindCallApply": false,
+    "noFallthroughCasesInSwitch": false
+  }
 }

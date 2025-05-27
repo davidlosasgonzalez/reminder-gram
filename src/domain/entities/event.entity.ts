@@ -1,31 +1,41 @@
-/**
- * @file Event
- * @description Event domain entity.
- */
-
 import { DateVO } from '@/domain/value-objects/date.vo';
 
-// #region Event
+/**
+ * Entity representing a calendar event in the system.
+ *
+ * This entity encapsulates all business rules and validation logic for calendar events.
+ * It ensures that:
+ * - Events have valid dates (start before end)
+ * - Events have required fields (title, dates, calendar)
+ * - Events can be updated while maintaining data integrity
+ * - Events can be checked for overlaps and date ranges
+ *
+ * @class Event
+ */
 export class Event {
-    public readonly id: string;
-    private title: string;
-    private description?: string;
-    private start: DateVO;
-    private end: DateVO;
-    private isAllDay: boolean;
-    private location?: string;
-    private calendarId: string;
+    //#region Properties
+    private readonly _id: string;
+    private _title: string;
+    private _description?: string;
+    private _start: DateVO;
+    private _end: DateVO;
+    private _isAllDay: boolean;
+    private _location?: string;
+    private _calendarId: string;
+    //#endregion
 
+    //#region Constructor
     /**
-     * Creates a new Event instance.
-     * @param id Unique identifier for the event.
-     * @param title Title of the event.
-     * @param start Start date and time.
-     * @param end End date and time.
-     * @param isAllDay Whether the event is all-day.
-     * @param calendarId ID of the calendar.
-     * @param description Optional description.
-     * @param location Optional location.
+     * Creates a new Event instance
+     * @param id - Unique identifier for the event
+     * @param title - Title of the event
+     * @param start - Start date and time
+     * @param end - End date and time
+     * @param isAllDay - Whether the event is an all-day event
+     * @param calendarId - ID of the calendar this event belongs to
+     * @param description - Optional description of the event
+     * @param location - Optional location of the event
+     * @throws Error if dates are invalid or required fields are missing
      */
     constructor(
         id: string,
@@ -39,80 +49,159 @@ export class Event {
     ) {
         this.validateRequiredFields(id, title, calendarId);
         this.validateDates(start, end);
-        this.id = id;
-        this.title = title;
-        this.start = start;
-        this.end = end;
-        this.isAllDay = isAllDay;
-        this.calendarId = calendarId;
-        this.description = description;
-        this.location = location;
+
+        this._id = id;
+        this._title = title;
+        this._start = start;
+        this._end = end;
+        this._isAllDay = isAllDay;
+        this._calendarId = calendarId;
+        this._description = description;
+        this._location = location;
     }
+    //#endregion
 
     //#region Getters
-    getId(): string {
-        return this.id;
+    /**
+     * Gets the event's unique identifier
+     * @returns The event ID
+     */
+    get id(): string {
+        return this._id;
     }
 
-    getTitle(): string {
-        return this.title;
+    /**
+     * Gets the event's title
+     * @returns The event title
+     */
+    get title(): string {
+        return this._title;
     }
-    getDescription(): string | undefined {
-        return this.description;
+
+    /**
+     * Gets the event's description
+     * @returns The event description or undefined
+     */
+    get description(): string | undefined {
+        return this._description;
     }
-    getStart(): DateVO {
-        return this.start;
+
+    /**
+     * Gets the event's start date and time
+     * @returns The start date
+     */
+    get start(): DateVO {
+        return this._start;
     }
-    getEnd(): DateVO {
-        return this.end;
+
+    /**
+     * Gets the event's end date and time
+     * @returns The end date
+     */
+    get end(): DateVO {
+        return this._end;
     }
-    getIsAllDay(): boolean {
-        return this.isAllDay;
+
+    /**
+     * Gets whether the event is an all-day event
+     * @returns True if the event is all-day
+     */
+    get isAllDay(): boolean {
+        return this._isAllDay;
     }
-    getLocation(): string | undefined {
-        return this.location;
+
+    /**
+     * Gets the event's location
+     * @returns The event location or undefined
+     */
+    get location(): string | undefined {
+        return this._location;
     }
-    getCalendarId(): string {
-        return this.calendarId;
+
+    /**
+     * Gets the ID of the calendar this event belongs to
+     * @returns The calendar ID
+     */
+    get calendarId(): string {
+        return this._calendarId;
     }
     //#endregion
 
     //#region Setters
-    setTitle(title: string): void {
+    /**
+     * Sets the event's title
+     * @param title - The new title for the event
+     */
+    set title(title: string) {
         if (!title?.trim()) {
             throw new Error('Event title is required');
         }
-        this.title = title;
+        this._title = title;
     }
-    setDescription(description: string | undefined): void {
-        this.description = description;
+
+    /**
+     * Sets the event's description
+     * @param description - The new description for the event
+     */
+    set description(description: string | undefined) {
+        this._description = description;
     }
-    setStart(start: DateVO): void {
+
+    /**
+     * Sets the event's start date and time
+     * @param start - The new start date for the event
+     */
+    set start(start: DateVO) {
         if (!start) {
             throw new Error('Start date is required');
         }
-        this.start = start;
-        this.validateDates(this.start, this.end);
+        this._start = start;
+        this.validateDates(this._start, this._end);
     }
-    setEnd(end: DateVO): void {
+
+    /**
+     * Sets the event's end date and time
+     * @param end - The new end date for the event
+     */
+    set end(end: DateVO) {
         if (!end) {
             throw new Error('End date is required');
         }
-        this.end = end;
-        this.validateDates(this.start, this.end);
+        this._end = end;
+        this.validateDates(this._start, this._end);
     }
-    setIsAllDay(isAllDay: boolean): void {
-        this.isAllDay = isAllDay;
+
+    /**
+     * Sets whether the event is an all-day event
+     * @param isAllDay - True if the event is an all-day event
+     */
+    set isAllDay(isAllDay: boolean) {
+        this._isAllDay = isAllDay;
     }
-    setLocation(location: string | undefined): void {
-        this.location = location;
+
+    /**
+     * Sets the event's location
+     * @param location - The new location for the event
+     */
+    set location(location: string | undefined) {
+        this._location = location;
     }
-    setCalendarId(calendarId: string): void {
-        this.calendarId = calendarId;
+
+    /**
+     * Sets the ID of the calendar this event belongs to
+     * @param calendarId - The new calendar ID for the event
+     */
+    set calendarId(calendarId: string) {
+        this._calendarId = calendarId;
     }
     //#endregion
 
-    //#region BusinessLogic
+    //#region Business Logic
+    /**
+     * Updates the event with new data while maintaining data integrity
+     * @param data - The data to update the event with
+     * @throws Error if the update would result in invalid dates
+     */
     update(data: {
         title?: string;
         start?: DateVO;
@@ -121,19 +210,27 @@ export class Event {
         description?: string;
         location?: string;
     }): void {
-        if (data.title) this.setTitle(data.title);
-        if (data.start) this.setStart(data.start);
-        if (data.end) this.setEnd(data.end);
-        if (data.isAllDay !== undefined) this.setIsAllDay(data.isAllDay);
-        if (data.description !== undefined)
-            this.setDescription(data.description);
-        if (data.location !== undefined) this.setLocation(data.location);
+        if (data.title) this.title = data.title;
+        if (data.start) this.start = data.start;
+        if (data.end) this.end = data.end;
+        if (data.isAllDay !== undefined) this.isAllDay = data.isAllDay;
+        if (data.description !== undefined) this.description = data.description;
+        if (data.location !== undefined) this.location = data.location;
     }
 
+    /**
+     * Gets the duration of the event in milliseconds
+     * @returns The duration in milliseconds
+     */
     getDuration(): number {
         return this.end.value.getTime() - this.start.value.getTime();
     }
 
+    /**
+     * Checks if this event overlaps with another event
+     * @param other - The other event to check for overlap
+     * @returns True if the events overlap, false otherwise
+     */
     overlapsWith(other: Event): boolean {
         return (
             this.start.value < other.end.value &&
@@ -142,7 +239,14 @@ export class Event {
     }
     //#endregion
 
-    //#region PrivateMethods
+    //#region Private Methods
+    /**
+     * Validates that all required fields are present and valid
+     * @param id - The event ID
+     * @param title - The event title
+     * @param calendarId - The calendar ID
+     * @throws Error if any required field is missing or invalid
+     */
     private validateRequiredFields(
         id: string,
         title: string,
@@ -153,6 +257,12 @@ export class Event {
         if (!calendarId) throw new Error('Calendar ID is required');
     }
 
+    /**
+     * Validates that the start date is before the end date
+     * @param start - The start date
+     * @param end - The end date
+     * @throws Error if dates are invalid
+     */
     private validateDates(start: DateVO, end: DateVO): void {
         if (!start || !end) {
             throw new Error('Start and end dates are required');
@@ -163,7 +273,10 @@ export class Event {
     }
     //#endregion
 
-    //#region StaticMethods
+    //#region Static Methods
+    /**
+     * Creates a new Event instance from a plain object
+     */
     static create(props: {
         id: string;
         title: string;
@@ -186,18 +299,20 @@ export class Event {
         );
     }
 
+    /**
+     * Converts the event to a plain object
+     */
     toJSON() {
         return {
-            id: this.id,
-            title: this.title,
-            description: this.description,
-            start: this.start.value,
-            end: this.end.value,
-            isAllDay: this.isAllDay,
-            location: this.location,
-            calendarId: this.calendarId,
+            id: this._id,
+            title: this._title,
+            description: this._description,
+            start: this._start.value,
+            end: this._end.value,
+            isAllDay: this._isAllDay,
+            location: this._location,
+            calendarId: this._calendarId,
         };
     }
     //#endregion
 }
-// #endregion

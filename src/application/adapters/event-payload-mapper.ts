@@ -1,103 +1,100 @@
-/**
- * @file event-payload-mapper
- * @description Utility for mapping payloads to Event entities and DTOs.
- */
-
 import { CreateEventDto } from '@/application/dtos/events/create-event.dto';
-import { Event } from '@/domain/entities/event.entity';
 import { DateVO } from '@/domain/value-objects/date.vo';
 
+/**
+ * EventPayloadMapper
+ *
+ * Maps payloads from various sources (LLM, API, forms, etc.) into CreateEventDto,
+ * ensuring all fields (especially dates) are normalized as DateVO, and sets isAllDay and end accordingly.
+ *
+ * This mapper always ensures that all-day events provide start/end dates in 'YYYY-MM-DD' format
+ * as required by the Google Calendar API.
+ */
 export class EventPayloadMapper {
-    // #region toEntity
-
     /**
-     * Maps a CreateEventDto to a domain Event entity.
-     * @param dto Event creation DTO.
-     * @param id Optional event id for updates.
-     * @returns Event domain entity.
-     */
-    static toEntity(dto: CreateEventDto, id?: string): Event {
-        return Event.create({
-            id: id ?? crypto.randomUUID(),
-            title: dto.title,
-            start: dto.start,
-            end: dto.end,
-            isAllDay: dto.isAllDay,
-            calendarId: dto.calendarId,
-            description: dto.description,
-            location: dto.location,
-        });
-    }
-
-    // #endregion
-
-    // #region toCreateEventDto
-
-    /**
-     * Maps a plain payload (from LLM, user input, etc.) to a CreateEventDto.
-     * Normalizes all-day and no-hour situations to prevent DateVO errors.
-     * @param payload Plain object with event fields.
-     * @param calendarId Calendar ID for the event.
-     * @returns CreateEventDto
+     * Maps a generic payload to CreateEventDto.
+     * If isAllDay is true (or detected automatically), formats dates in 'YYYY-MM-DD'.
+     * @param payload - The source payload (may have dates as string, Date, DateVO, etc.).
+     * @param calendarId - The calendar ID to use.
+     * @returns {CreateEventDto}
      */
     static toCreateEventDto(payload: any, calendarId: string): CreateEventDto {
-        const isAllDay = !!payload.isAllDay;
-        let start: Date;
-        let end: Date;
+        // Detect all-day: explicitly set, or only a date (YYYY-MM-DD) with no hour
+        const isAllDay =
+            payload.isAllDay !== undefined
+                ? payload.isAllDay
+                : typeof payload.start === 'string' &&
+                  (/^\d{4}-\d{2}-\d{2}$/.test(payload.start) ||
+                      /^\d{4}-\d{2}-\d{2}T00:00(:00)?(\.000)?Z?$/.test(
+                          payload.start,
+                      ));
 
-        if (typeof payload.start === 'string') {
-            if (/^\d{4}-\d{2}-\d{2}$/.test(payload.start)) {
-                start = new Date(`${payload.start}T00:00:00`);
-            } else {
-                start = new Date(payload.start);
-            }
-        } else if (payload.start instanceof Date) {
-            start = payload.start;
-        } else if (payload.start instanceof DateVO) {
-            start = payload.start.value;
-        } else {
-            start = new Date();
-        }
+        let startVO: DateVO;
+        let endVO: DateVO;
 
         if (isAllDay) {
-            end = new Date(start);
-            end.setDate(start.getDate() + 1);
-        } else {
-            if (payload.end) {
-                const proposedEnd =
-                    payload.end instanceof DateVO
-                        ? payload.end.value
-                        : payload.end instanceof Date
-                          ? payload.end
-                          : typeof payload.end === 'string'
-                            ? new Date(payload.end)
-                            : null;
-
-                if (
-                    proposedEnd &&
-                    proposedEnd.getTime() - start.getTime() >= 5 * 60 * 1000
-                ) {
-                    end = proposedEnd;
-                } else {
-                    end = new Date(start);
-                    end.setMinutes(start.getMinutes() + 5);
-                }
+            // Ensure start is always in 'YYYY-MM-DD'
+            let startDateStr: string;
+            if (typeof payload.start === 'string') {
+                // If string with T, cut to YYYY-MM-DD
+                startDateStr = payload.start.slice(0, 10);
+            } else if (payload.start instanceof Date) {
+                startDateStr = payload.start.toISOString().slice(0, 10);
+            } else if (payload.start && payload.start.value instanceof Date) {
+                startDateStr = payload.start.value.toISOString().slice(0, 10);
             } else {
-                end = new Date(start);
-                end.setMinutes(start.getMinutes() + 5);
+                throw new Error('Invalid start date for all-day event');
+            }
+
+            // End must be next day (YYYY-MM-DD, exclusive)
+            const endDateObj = new Date(startDateStr + 'T00:00:00Z');
+            endDateObj.setDate(endDateObj.getDate() + 1);
+            const endDateStr = endDateObj.toISOString().slice(0, 10);
+
+            startVO = DateVO.create(startDateStr); // "2025-05-24"
+            endVO = DateVO.create(endDateStr); // "2025-05-25"
+        } else {
+            startVO = toDateVO(payload.start);
+            if (payload.end) {
+                endVO = toDateVO(payload.end);
+            } else {
+                const endDate = new Date(startVO.value);
+                endDate.setMinutes(endDate.getMinutes() + 5);
+                endVO = DateVO.create(endDate);
             }
         }
 
         return {
             title: payload.title,
-            description: payload.description || '',
-            start: DateVO.create(start),
-            end: DateVO.create(end),
+            start: startVO,
+            end: endVO,
+            description: payload.description,
+            location: payload.location,
             isAllDay,
             calendarId,
-            location: payload.location || '',
         };
     }
+}
 
-    // #endregion
+/**
+ * Converts a date input (string, Date, DateVO) to DateVO, or throws if invalid.
+ * @param input - The input to convert
+ * @returns {DateVO}
+ */
+function toDateVO(input: any): DateVO {
+    if (!input) {
+        throw new Error('Date required');
+    }
+    if (input instanceof DateVO) return input;
+    if (input instanceof Date) return DateVO.create(input);
+    if (typeof input === 'string') {
+        // All-day: 'YYYY-MM-DD'
+        if (/^\d{4}-\d{2}-\d{2}$/.test(input)) {
+            return DateVO.create(input);
+        }
+        return DateVO.create(new Date(input));
+    }
+    if ('value' in input && input.value instanceof Date)
+        return DateVO.create(input.value);
+    throw new Error('Invalid date');
 }

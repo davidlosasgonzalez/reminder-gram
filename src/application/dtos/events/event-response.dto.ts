@@ -1,33 +1,36 @@
+import { Event } from '@/domain/entities/event.entity';
+
 /**
- * @file EventResponseDto
- * @description DTO for event response.
+ * Data Transfer Object for event responses
+ *
+ * This DTO is used to format event data for responses,
+ * ensuring consistent data structure across the application.
  */
-
-import { IsString, IsOptional } from 'class-validator';
-import { Type } from 'class-transformer';
-import { DateVO } from '@/domain/value-objects/date.vo';
-
 export class EventResponseDto {
-    @IsString()
     id: string;
-
-    @IsString()
     title: string;
-
-    @IsOptional()
-    @IsString()
     description?: string;
-
-    @Type(() => DateVO)
-    start: DateVO;
-
-    @Type(() => DateVO)
-    end: DateVO;
-
-    @IsString()
-    @IsOptional()
+    start: string;
+    end: string;
+    isAllDay: boolean;
     location?: string;
-
-    @IsString()
     calendarId: string;
+
+    /**
+     * Creates a new EventResponseDto from an Event entity
+     * @param event The event entity to convert
+     * @returns A new EventResponseDto instance
+     */
+    static fromEvent(event: Event): EventResponseDto {
+        const dto = new EventResponseDto();
+        dto.id = event.id;
+        dto.title = event.title;
+        dto.description = event.description;
+        dto.start = event.start.toString();
+        dto.end = event.end.toString();
+        dto.isAllDay = event.isAllDay;
+        dto.location = event.location;
+        dto.calendarId = event.calendarId;
+        return dto;
+    }
 }
