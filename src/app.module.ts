@@ -1,39 +1,30 @@
+/**
+ * @file app.module
+ * @description Main application module. Bootstraps all infrastructure and presentation modules.
+ */
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-
-// Infrastructure Modules
-import { CalendarModule } from './infrastructure/external/calendar/calendar.module';
-
-// Presentation Modules
-import { TelegramModule } from './presentation/telegram/telegram.module';
+import { CalendarModule } from '@/infrastructure/external-services/calendar/calendar.module';
+import { TelegramModule } from '@/presentation/telegram/telegram.module';
+import { SchedulerModule } from '@/infrastructure/scheduler/scheduler.module';
+import { SchedulerService } from '@/infrastructure/scheduler/scheduler.service';
 
 /**
- * Main application module
- *
- * This is the root module of the application that bootstraps all other modules.
- * It configures:
- * - Global configuration using ConfigModule
- * - Infrastructure modules for external services
- * - Presentation modules for user interfaces
- *
- * The module structure follows Clean Architecture principles with clear separation
- * of concerns between different layers of the application.
+ * Main application module that imports global config, infrastructure and presentation modules.
  */
 @Module({
     imports: [
-        // Global configuration
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: '.env',
         }),
-
-        // Infrastructure modules
         CalendarModule,
-
-        // Presentation modules
         TelegramModule,
-        // Add EventsModule here only if it exists:
-        // EventsModule,
+        SchedulerModule,
     ],
 })
-export class AppModule {}
+export class AppModule {
+    // Force SchedulerService instantiation to ensure cron starts
+    constructor(private readonly _: SchedulerService) {}
+}
