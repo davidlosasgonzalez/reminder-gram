@@ -24,6 +24,7 @@ export class BaseTelegramService {
      * Initializes the Telegram bot with base configuration.
      * @param configService The configuration service.
      */
+
     constructor(protected readonly configService: ConfigService) {
         const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
         if (!token) {

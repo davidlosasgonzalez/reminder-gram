@@ -16,10 +16,10 @@ import { extractJsonFromString } from '@/shared/utils/extractJsonFromString';
  */
 function cleanPayload(payload: Record<string, any>) {
     const { clarification, ...rest } = payload;
-    // Remove trivial or empty location
+
     if ('location' in rest && (!rest.location || rest.location === '')) {
-        const { location, ...finalPayload } = rest;
-        return finalPayload;
+        const { clarification, location, ...rest } = payload;
+        return rest;
     }
     return rest;
 }

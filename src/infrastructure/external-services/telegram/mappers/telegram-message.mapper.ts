@@ -46,13 +46,14 @@ export class TelegramMessageMapper {
                 case 'title':
                     event.title = value;
                     break;
-                case 'date':
+                case 'date': {
                     const date = new Date(value);
                     if (!isNaN(date.getTime())) {
                         event.start = DateVO.create(date);
                     }
                     break;
-                case 'time':
+                }
+                case 'time': {
                     if (event.start) {
                         const [hours, minutes] = value.split(':').map(Number);
                         const date = event.start.value;
@@ -60,6 +61,7 @@ export class TelegramMessageMapper {
                         event.start = DateVO.create(date);
                     }
                     break;
+                }
                 case 'description':
                     event.description = value;
                     break;
