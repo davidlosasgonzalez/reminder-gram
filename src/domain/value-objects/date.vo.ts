@@ -1,71 +1,53 @@
 /**
- * Value Object for handling dates
- * This class ensures that dates are handled consistently throughout the application
+ * @file DateVO
+ * @description Value Object for handling dates.
  */
-export class DateVO {
-    private readonly _value: Date;
 
+// #region DateVO
+export class DateVO {
+    public readonly value: Date;
+
+    /**
+     * Creates a new DateVO instance.
+     * @param value Date or string representation of date.
+     */
     constructor(value: Date | string) {
-        this._value = value instanceof Date ? value : new Date(value);
+        this.value = value instanceof Date ? value : new Date(value);
         this.validate();
     }
 
-    /**
-     * Validates that the date is valid
-     * @throws Error if the date is invalid
-     */
+    // #region Validation
     private validate(): void {
-        if (isNaN(this._value.getTime())) {
+        if (isNaN(this.value.getTime())) {
             throw new Error('Invalid date');
         }
     }
+    // #endregion
 
-    /**
-     * Gets the date value
-     */
-    get value(): Date {
-        return new Date(this._value);
-    }
-
-    /**
-     * Converts the date to ISO string
-     */
+    // #region Methods
     toISOString(): string {
-        return this._value.toISOString();
+        return this.value.toISOString();
     }
 
-    /**
-     * Converts the date to string
-     */
     toString(): string {
-        return this._value.toISOString();
+        return this.value.toISOString();
     }
 
-    /**
-     * Creates a new DateVO instance from a string or Date
-     */
     static create(value: Date | string): DateVO {
         return new DateVO(value);
     }
 
-    /**
-     * Checks if two dates are equal
-     */
     equals(other: DateVO): boolean {
-        return this._value.getTime() === other._value.getTime();
+        return this.value.getTime() === other.value.getTime();
     }
 
-    /**
-     * Checks if this date is before another date
-     */
     isBefore(other: DateVO): boolean {
-        return this._value.getTime() < other._value.getTime();
+        return this.value.getTime() < other.value.getTime();
     }
 
-    /**
-     * Checks if this date is after another date
-     */
     isAfter(other: DateVO): boolean {
-        return this._value.getTime() > other._value.getTime();
+        return this.value.getTime() > other.value.getTime();
     }
+    // #endregion
 }
+// #endregion

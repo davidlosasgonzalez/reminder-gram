@@ -14,6 +14,9 @@ export function extractJsonFromString(input: string): string | null {
     const endIndex = input.lastIndexOf('}');
 
     if (startIndex === -1 || endIndex === -1 || startIndex >= endIndex) {
+        console.warn(
+            '[extractJsonFromString] No valid JSON found in input string.',
+        );
         return null;
     }
 

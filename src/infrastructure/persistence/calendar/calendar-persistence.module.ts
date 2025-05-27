@@ -1,20 +1,24 @@
+/**
+ * @file calendar-persistence.module
+ * @description Provides persistence layer for calendar events using Google Calendar.
+ */
+
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { EventRepositoryImpl } from '../repositories/event.repository';
-import { GoogleCalendarService } from '@/infrastructure/external/calendar/google-calendar.service';
-import { CALENDAR_SERVICE } from '../../external/calendar/calendar.module';
-import { EVENT_REPOSITORY } from '../repositories/repository.tokens';
+import { EventRepositoryImpl } from '@/infrastructure/persistence/repositories/event.repository';
+import { GoogleCalendarService } from '@/infrastructure/external-services/calendar/services/google-calendar.service';
+import { CALENDAR_SERVICE } from '@/infrastructure/external-services/calendar/calendar.tokens';
+import { EVENT_PORT } from '@/infrastructure/persistence/repositories/repository.tokens';
 
 /**
- * Calendar Persistence Module
- *
- * Provides persistence layer for calendar events using Google Calendar
+ * Calendar Persistence Module.
+ * Provides persistence layer for calendar events using Google Calendar.
  */
 @Module({
     imports: [ConfigModule],
     providers: [
         {
-            provide: EVENT_REPOSITORY,
+            provide: EVENT_PORT,
             useClass: EventRepositoryImpl,
         },
         {
@@ -22,6 +26,6 @@ import { EVENT_REPOSITORY } from '../repositories/repository.tokens';
             useClass: GoogleCalendarService,
         },
     ],
-    exports: [EVENT_REPOSITORY, CALENDAR_SERVICE],
+    exports: [EVENT_PORT, CALENDAR_SERVICE],
 })
 export class CalendarPersistenceModule {}

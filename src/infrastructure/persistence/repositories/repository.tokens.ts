@@ -1,4 +1,9 @@
 /**
- * Injection token for the EventRepository implementation.
+ * @file repository.tokens
+ * @description Injection tokens for repository implementations.
  */
-export const EVENT_REPOSITORY = 'EVENT_REPOSITORY';
+
+/**
+ * Injection token for the EventPort implementation.
+ */
+export const EVENT_PORT = 'EVENT_PORT';
