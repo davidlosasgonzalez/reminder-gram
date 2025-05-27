@@ -8,7 +8,6 @@ const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
 const { google } = require('googleapis');
-const { URL } = require('url');
 
 const CREDENTIALS_PATH = path.resolve(__dirname, '../private/credentials.json');
 const TOKEN_DIR = path.resolve(__dirname, '../private/tokens');
@@ -35,7 +34,7 @@ function getOAuth2Client() {
     return new google.auth.OAuth2(
         credentials.client_id,
         credentials.client_secret,
-        credentials.redirect_uris[0] || 'http://localhost'
+        credentials.redirect_uris[0] || 'http://localhost',
     );
 }
 
@@ -49,10 +48,12 @@ function askQuestion(query) {
         input: process.stdin,
         output: process.stdout,
     });
-    return new Promise((resolve) => rl.question(query, ans => {
-        rl.close();
-        resolve(ans);
-    }));
+    return new Promise((resolve) =>
+        rl.question(query, (ans) => {
+            rl.close();
+            resolve(ans);
+        }),
+    );
 }
 
 /**
@@ -75,7 +76,9 @@ function extractCodeFromUrl(urlString) {
 async function main() {
     if (!fs.existsSync(TOKEN_DIR)) fs.mkdirSync(TOKEN_DIR);
 
-    const email = await askQuestion('Enter the Google account email to authorize: ');
+    const email = await askQuestion(
+        'Enter the Google account email to authorize: ',
+    );
     const oAuth2Client = getOAuth2Client();
 
     const SCOPES = [
@@ -92,18 +95,25 @@ async function main() {
 
     console.log('\n1. Open this URL in your browser and complete the sign-in:');
     console.log(authUrl);
-    const redirectUrl = await askQuestion('\n2. Paste here the FULL redirect URL after accepting permissions: ');
+    const redirectUrl = await askQuestion(
+        '\n2. Paste here the FULL redirect URL after accepting permissions: ',
+    );
 
     const code = extractCodeFromUrl(redirectUrl.trim());
     if (!code) {
-        console.error('\nERROR: Could not extract "code" from the URL. Please paste the entire URL shown in the browser after accepting permissions.');
+        console.error(
+            '\nERROR: Could not extract "code" from the URL. Please paste the entire URL shown in the browser after accepting permissions.',
+        );
         process.exit(1);
     }
 
     const { tokens } = await oAuth2Client.getToken(code);
     oAuth2Client.setCredentials(tokens);
 
-    const tokenPath = path.join(TOKEN_DIR, `${email.replace(/[@.]/g, '_')}_token.json`);
+    const tokenPath = path.join(
+        TOKEN_DIR,
+        `${email.replace(/[@.]/g, '_')}_token.json`,
+    );
     fs.writeFileSync(tokenPath, JSON.stringify(tokens, null, 2));
     console.log(`\n Token saved to: ${tokenPath}`);
 
@@ -116,7 +126,7 @@ async function main() {
     }
 }
 
-main().catch(e => {
+main().catch((e) => {
     console.error('ERROR:', e.message);
     process.exit(1);
 });

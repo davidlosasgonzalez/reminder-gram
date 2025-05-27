@@ -1,0 +1,43 @@
+name: CI
+
+on:
+    push:
+        branches: [development]
+    pull_request:
+        branches: [development]
+
+jobs:
+    build-and-test:
+        runs-on: ubuntu-latest
+
+        env:
+            TELEGRAM_BOT_TOKEN: fake-token
+            TELEGRAM_ADMIN_CHAT_ID: 123456789
+            OPENAI_API_KEY: fake-openai
+            LLM_MODEL: gpt-4o
+            CRON_TIME: '08:00'
+            GOOGLE_OAUTH_USER_EMAIL: test@example.com
+            GOOGLE_CALENDAR_ID: primary
+            CREDENTIALS_PATH: private/credentials.json
+            IGNORED_EVENT_TITLES: festivo,holiday
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Setup Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+
+            - name: Install dependencies
+              run: npm install
+
+            - name: Lint code
+              run: npm run lint
+
+            - name: Run tests
+              run: npm run test
+
+            - name: Build project
+              run: npm run build
